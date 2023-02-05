@@ -1,7 +1,7 @@
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, logging
 from deepmultilingualpunctuation import PunctuationModel
 
-from textblob import TextBlob
+# from textblob import TextBlob
 from threading import Thread
 import soundfile as sf
 
@@ -14,7 +14,7 @@ import torch
 import nltk
 import os
 
-
+nltk.download("punkt")
 logging.set_verbosity_error()
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -35,10 +35,10 @@ def break2chunks(audio_path):
     chunks = []
     for i in range(0, len(speech), chunk_size):
         chunks.append(speech[i:i+chunk_size])
-    
+
     if not os.path.isdir("audio-chunks"):
         os.mkdir("audio-chunks")
-        
+
     # make them wav files
     for i, chunk in enumerate(chunks):
         sf.write(f"audio-chunks/chunk{i}.wav", chunk, 16000)
@@ -59,11 +59,10 @@ def correct_casing(input_sentence):
 
 def asr_transcript(input_file):
     #Loading model
-    nltk.download("punkt")
     model_name = "facebook/wav2vec2-base-960h"
     model = Wav2Vec2ForCTC.from_pretrained(model_name)
     tokenizer = Wav2Vec2Processor.from_pretrained(model_name)
-    
+
     # Load the audio file
     speech = load_data(input_file)
 
@@ -71,7 +70,7 @@ def asr_transcript(input_file):
     input_values = tokenizer(speech, return_tensors="pt", sampling_rate=16000, padding="longest").input_values
     logits = model(input_values).logits
     predicted_ids = torch.argmax(logits, dim=-1)
-    
+
     #Get the words from predicted word ids
     transcription = tokenizer.decode(predicted_ids[0])
     transcription = correct_casing(transcription.lower())
@@ -85,7 +84,7 @@ def chunk2text(chunk, transcription):
 def convert2text(audio_path):
     if not os.path.isdir("transcripts"):
         os.mkdir("transcripts")
-        
+
     trans_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
     chunks = break2chunks(audio_path)
 
@@ -93,9 +92,10 @@ def convert2text(audio_path):
     count = 0
     for i, chunk in enumerate(chunks):
         count += 1
+        print(f"Processing chunk {i+1} of {len(chunks)}")
         p = Thread(target=chunk2text, args=(chunk, transcription), group=None)
         p.start()
-        
+
         if count == 2:
             count = 0
             p.join()
@@ -104,14 +104,13 @@ def convert2text(audio_path):
     # make a single string
     transcription = " ".join(transcription)
 
-    # from textblob import TextBlob
+    # # correct spelling
     # transcription = TextBlob(transcription)
     # transcription = str(transcription.correct())
-    # print(f"{transcription}\n") 
 
     trans_path = f"transcripts/{trans_date}_transcript.txt"
     with open(trans_path, "w") as f:
         f.write(transcription)
     f.close()
-    
+
     return trans_path, trans_date
