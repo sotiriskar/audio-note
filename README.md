@@ -30,12 +30,12 @@ It is recommended to use a virtual environment to install the required packages.
 ### Instructions
 1. Create a virtual environment:
 ```sh
-python3 -m venv audioNote
+python3 -m venv audionote
 ```
 
 2. Activate the virtual environment:
 ```sh
-source audioNote/bin/activate
+source audionote/bin/activate
 ```
 
 3. Upgrade pip:
@@ -51,7 +51,7 @@ pip install -r requirements.txt
 ## Usage
 To run the app:
 ```sh
-python AudioNote.py
+python audionote.py
 ```
 
 ## Deactivating the Virtual Environment
