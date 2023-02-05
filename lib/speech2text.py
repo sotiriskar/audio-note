@@ -24,28 +24,10 @@ def load_data(input_file):
     if len(speech.shape) > 1: 
         speech = speech[:,0] + speech[:,1]
 
-    # #Resampling the audio
-    # if sample_rate != 44100:
-    #     speech = librosa.resample(speech, orig_sr=sample_rate, target_sr=16000)
+    # Resampling the audio
+    if sample_rate != 16000:
+        speech = librosa.resample(speech, orig_sr=sample_rate, target_sr=16000)
     return speech
-
-def divide_chunks(audio_path):
-    speech = load_data(audio_path)
-    chunk_size = 16000 * 60 # 60 seconds
-    chunks = []
-    for i in range(0, len(speech), chunk_size):
-        chunks.append(speech[i:i+chunk_size])
-
-    if not os.path.isdir("audio-chunks"):
-        os.mkdir("audio-chunks")
-
-    # make them wav files
-    for i, chunk in enumerate(chunks):
-        sf.write(f"audio-chunks/chunk{i}.wav", chunk, 16000)
-
-    chunks = os.listdir("audio-chunks")
-    chunks.sort()
-    return chunks
 
 def add_punctuation(input_sentence):
     model = PunctuationModel(model="kredor/punctuate-all")
@@ -83,7 +65,9 @@ def convert_text(audio_path):
         os.mkdir("transcripts")
 
     trans_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-    chunks = divide_chunks(audio_path)
+
+    chunks = os.listdir("audio-chunks")
+    chunks.sort()
 
     transcription = []
     count = 0
