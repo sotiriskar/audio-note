@@ -1,0 +1,9 @@
+__pycache__
+
+# audio
+audio-chunks
+raw-audio
+
+# text
+transcripts
+summary

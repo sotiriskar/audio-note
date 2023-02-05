@@ -40,16 +40,16 @@ def record_audio():
     p.terminate()
 
     # create temp folder
-    if not os.path.isdir("recording"):
-        os.mkdir("recording")
+    if not os.path.isdir("raw-audio"):
+        os.mkdir("raw-audio")
 
     # Save the recording to a file
-    path = "recording/record.wav"
-    wf = wave.open(path, "wb")
+    audio_path = "raw-audio/record.wav"
+    wf = wave.open(audio_path, "wb")
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
     wf.writeframes(b"".join(frames))
     wf.close()
 
-    return path
+    return audio_path

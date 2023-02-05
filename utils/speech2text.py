@@ -1,25 +1,22 @@
-import os
-import nltk
-import torch
-import librosa
+from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, logging
+from deepmultilingualpunctuation import PunctuationModel
+
+from textblob import TextBlob
+from threading import Thread
+import soundfile as sf
+
 import textwrap
 import datetime
 import warnings
-from tqdm import tqdm
-import soundfile as sf
-from threading import Thread
-from textblob import TextBlob
-from deepmultilingualpunctuation import PunctuationModel
-from happytransformer import HappyTextToText, TTSettings
-from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, logging
 
-#Loading model
-nltk.download("punkt")
+import librosa
+import torch
+import nltk
+import os
+
+
 logging.set_verbosity_error()
 warnings.filterwarnings("ignore", category=UserWarning)
-model_name = "facebook/wav2vec2-base-960h"
-model = Wav2Vec2ForCTC.from_pretrained(model_name)
-tokenizer = Wav2Vec2Processor.from_pretrained(model_name)
 
 def load_data(input_file):
     # Load the audio file
@@ -32,12 +29,8 @@ def load_data(input_file):
         speech = librosa.resample(speech, orig_sr=sample_rate, target_sr=16000)
     return speech
 
-def break2chunks(input_file):
-    # if audio is not long enough, just return the whole thing
-    if os.path.getsize(input_file) < 16000 * 30:
-        return [input_file]
-
-    speech = load_data(input_file)
+def break2chunks(audio_path):
+    speech = load_data(audio_path)
     chunk_size = 16000 * 60 # 60 seconds
     chunks = []
     for i in range(0, len(speech), chunk_size):
@@ -65,10 +58,16 @@ def correct_casing(input_sentence):
     return '\n'.join(textwrap.wrap(corr_sentences, width=80))
 
 def asr_transcript(input_file):
+    #Loading model
+    nltk.download("punkt")
+    model_name = "facebook/wav2vec2-base-960h"
+    model = Wav2Vec2ForCTC.from_pretrained(model_name)
+    tokenizer = Wav2Vec2Processor.from_pretrained(model_name)
+    
     # Load the audio file
     speech = load_data(input_file)
 
-    #Tokenize and take logits and argmax
+    #Tokenize, logits and argmax
     input_values = tokenizer(speech, return_tensors="pt", sampling_rate=16000, padding="longest").input_values
     logits = model(input_values).logits
     predicted_ids = torch.argmax(logits, dim=-1)
@@ -78,41 +77,41 @@ def asr_transcript(input_file):
     transcription = correct_casing(transcription.lower())
     return str(transcription)
 
-def chunk2text(chunk, path, transcription):
+def chunk2text(chunk, transcription):
     chunk_path = f"audio-chunks/{chunk}"
     chunk_transcription = asr_transcript(chunk_path)
-    transcription.append(chunk_transcription)
+    transcription.append(chunk_transcription) 
 
-def convert2text(path):
-    if not os.path.isdir("results"):
-        os.mkdir("results")
+def convert2text(audio_path):
+    if not os.path.isdir("transcripts"):
+        os.mkdir("transcripts")
         
-    file_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-    chunks = break2chunks(path)
+    trans_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
+    chunks = break2chunks(audio_path)
 
     transcription = []
     count = 0
-    for i, chunk in enumerate(tqdm(chunks)):
+    for i, chunk in enumerate(chunks):
         count += 1
-        p = Thread(target=chunk2text, args=(chunk, path, transcription), group=None)
+        p = Thread(target=chunk2text, args=(chunk, transcription), group=None)
         p.start()
         
         if count == 2:
             count = 0
             p.join()
+    p.join()
 
     # make a single string
     transcription = " ".join(transcription)
 
-    file_path = f"results/{file_date}_transcript.txt"
-    with open(file_path, "w") as f:
+    # from textblob import TextBlob
+    # transcription = TextBlob(transcription)
+    # transcription = str(transcription.correct())
+    # print(f"{transcription}\n") 
+
+    trans_path = f"transcripts/{trans_date}_transcript.txt"
+    with open(trans_path, "w") as f:
         f.write(transcription)
     f.close()
     
-    return file_path, file_date
-
-
-if __name__ == "__main__":
-    path = "../recording/record.wav"
-    file_path, file_date = convert2text(path)
-    print(f"Transcription saved in {file_path}")
+    return trans_path, trans_date
