@@ -18,6 +18,10 @@ AudioNote is a powerful and efficient meeting assistant that transforms your wor
 ## Known Issues
 Currently, the recording only works through microphone input and not system audio.
 
+This project is currently in a development stage and may contain bugs. 
+Feedback and contributions are welcome. However, keep in mind that the code may be subject to change.
+
+
 ## Installation
 ### Prerequisites
 - Python 3.6 or higher
