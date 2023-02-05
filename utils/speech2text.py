@@ -48,7 +48,7 @@ def break2chunks(audio_path):
     return chunks
 
 def correct_casing(input_sentence):
-    model = PunctuationModel()
+    model = PunctuationModel(model="kredor/punctuate-all")
     create_sentences = model.restore_punctuation(input_sentence)
 
     sentences = nltk.sent_tokenize(create_sentences)
@@ -58,11 +58,9 @@ def correct_casing(input_sentence):
     return '\n'.join(textwrap.wrap(corr_sentences, width=80))
 
 def asr_transcript(input_file):
-    #Loading model
     model_name = "facebook/wav2vec2-base-960h"
     model = Wav2Vec2ForCTC.from_pretrained(model_name)
     tokenizer = Wav2Vec2Processor.from_pretrained(model_name)
-
     # Load the audio file
     speech = load_data(input_file)
 
