@@ -26,6 +26,7 @@ Feedback and contributions are welcome. However, keep in mind that the code may 
 ### Prerequisites
 - Python 3.6 or higher
 - Pip package manager [https://pip.pypa.io/en/stable/installing/](https://pip.pypa.io/en/stable/installing/)
+
 It is recommended to use a virtual environment to install the required packages. If you are not familiar with virtual environments, you can read more about them [here](https://docs.python.org/3/library/venv.html).
 ### Instructions
 1. Create a virtual environment:
