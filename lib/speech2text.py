@@ -20,17 +20,16 @@ nltk.download("punkt", quiet=True, download_dir="./")
 logging.set_verbosity_error()
 
 def load_data(input_file):
-    # Load the audio file
     speech, sample_rate = librosa.load(input_file)
     if len(speech.shape) > 1: 
         speech = speech[:,0] + speech[:,1]
 
-    #Resampling the audio
-    if sample_rate != 16000:
-        speech = librosa.resample(speech, orig_sr=sample_rate, target_sr=16000)
+    # #Resampling the audio
+    # if sample_rate != 44100:
+    #     speech = librosa.resample(speech, orig_sr=sample_rate, target_sr=16000)
     return speech
 
-def break2chunks(audio_path):
+def divide_chunks(audio_path):
     speech = load_data(audio_path)
     chunk_size = 16000 * 60 # 60 seconds
     chunks = []
@@ -48,7 +47,7 @@ def break2chunks(audio_path):
     chunks.sort()
     return chunks
 
-def correct_casing(input_sentence):
+def add_punctuation(input_sentence):
     model = PunctuationModel(model="kredor/punctuate-all")
     create_sentences = model.restore_punctuation(input_sentence)
 
@@ -62,7 +61,6 @@ def asr_transcript(input_file):
     model_name = "facebook/wav2vec2-base-960h"
     model = Wav2Vec2ForCTC.from_pretrained(model_name)
     tokenizer = Wav2Vec2Processor.from_pretrained(model_name)
-    # Load the audio file
     speech = load_data(input_file)
 
     #Tokenize, logits and argmax
@@ -72,29 +70,28 @@ def asr_transcript(input_file):
 
     #Get the words from predicted word ids
     transcription = tokenizer.decode(predicted_ids[0])
-    transcription = correct_casing(transcription.lower())
+    transcription = add_punctuation(transcription.lower())
     return str(transcription)
 
-def chunk2text(chunk, transcription):
+def chunk_to_text(chunk, transcription):
     chunk_path = f"audio-chunks/{chunk}"
     chunk_transcription = asr_transcript(chunk_path)
     transcription.append(chunk_transcription) 
 
-def convert2text(audio_path):
+def convert_text(audio_path):
     if not os.path.isdir("transcripts"):
         os.mkdir("transcripts")
 
     trans_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-    chunks = break2chunks(audio_path)
+    chunks = divide_chunks(audio_path)
 
     transcription = []
     count = 0
     for i, chunk in enumerate(chunks):
         count += 1
         print(f"Processing chunk {i+1} of {len(chunks)}")
-        p = Thread(target=chunk2text, args=(chunk, transcription), group=None)
+        p = Thread(target=chunk_to_text, args=(chunk, transcription), group=None)
         p.start()
-
         if count == 2:
             count = 0
             p.join()
@@ -107,7 +104,7 @@ def convert2text(audio_path):
     # transcription = TextBlob(transcription)
     # transcription = str(transcription.correct())
 
-    trans_path = f"transcripts/{trans_date}_transcript.txt"
+    trans_path = f"transcripts/transcript_{trans_date}.txt"
     with open(trans_path, "w") as f:
         f.write(transcription)
     f.close()

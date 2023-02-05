@@ -27,6 +27,6 @@ def summarize_text(trans_path, trans_date):
         os.mkdir("summary")
 
     # Create summary file
-    with open(f"summary/{trans_date}_summary.txt", "w") as f:
+    with open(f"summary/summary_{trans_date}.txt", "w") as f:
         f.write(text_summary)
     f.close()

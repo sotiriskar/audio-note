@@ -29,9 +29,7 @@ def record_audio():
     record_thread = threading.Thread(target=recording)
     record_thread.start()
 
-    # Wait for user to press enter
-    input("Press 'enter' to stop the recording")
-
+    input("Press 'Enter' to stop the recording")
     stop_event.set()
     record_thread.join()
 
@@ -45,7 +43,7 @@ def record_audio():
         os.mkdir("raw-audio")
 
     # Save the recording to a file
-    audio_path = "raw-audio/record.wav"
+    audio_path = "raw-audio/audio.wav"
     wf = wave.open(audio_path, "wb")
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
