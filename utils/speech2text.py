@@ -14,9 +14,9 @@ import torch
 import nltk
 import os
 
-nltk.download("punkt")
-logging.set_verbosity_error()
 warnings.filterwarnings("ignore", category=UserWarning)
+nltk.download("punkt", quiet=True, download_dir="./")
+logging.set_verbosity_error()
 
 def load_data(input_file):
     # Load the audio file

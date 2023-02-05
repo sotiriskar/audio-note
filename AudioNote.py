@@ -10,7 +10,7 @@ def main():
     trans_path, trans_date = convert2text(audio_path)
     summarize_text(trans_path, trans_date)
     cleanup()
-    print("Done!")
+    print("Transcription complete!")
     
 if __name__ == "__main__":
     main()
