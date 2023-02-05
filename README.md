@@ -1,5 +1,7 @@
 # AudioNote
-"AudioNote is a powerful and efficient meeting assistant that transforms your words into actionable text. With its advanced speech-to-text technology, powered by facebook's wav2vec2, it accurately records and transcribes your meetings. Say goodbye to manual note-taking and hello to effortless and accurate meeting summaries with AudioNote.
+<img width="100%" alt="audionote_logo" src="https://user-images.githubusercontent.com/36128807/216830511-4a49ba77-9499-4fb7-80b5-434d3bfa0f90.jpg">
+
+AudioNote is a powerful and efficient meeting assistant that transforms your words into actionable text. With its advanced speech-to-text technology, powered by facebook's wav2vec2, it accurately records and transcribes your meetings. Say goodbye to manual note-taking and hello to effortless and accurate meeting summaries with AudioNote.
 
 ## Table of Contents
 - [AudioNote](#audionote)
