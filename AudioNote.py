@@ -1,6 +1,6 @@
 from utils.speech2text import convert2text
-from utils.record import record_audio
 from utils.summary import summarize_text
+from utils.record import record_audio
 from utils.cleanup import cleanup
 
 
@@ -11,6 +11,7 @@ def main():
     summarize_text(trans_path, trans_date)
     cleanup()
     print("Transcription complete!")
-    
+
+
 if __name__ == "__main__":
     main()

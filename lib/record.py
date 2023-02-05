@@ -1,7 +1,8 @@
+import threading
 import pyaudio
 import wave
 import os
-import threading
+
 
 def record_audio():
     CHUNK = 1024

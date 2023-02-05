@@ -1,5 +1,6 @@
-import os
 import shutil
+import os
+
 
 def cleanup():
     if os.path.isdir("audio-chunks"):
