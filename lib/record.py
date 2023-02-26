@@ -6,7 +6,7 @@ import time
 import os
 
 
-def record_audio():
+def record_audio(audio_queue, stop_event):
     if not os.path.isdir("audio-chunks"):
         os.mkdir("audio-chunks")
 
@@ -18,56 +18,47 @@ def record_audio():
     # Start recording
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT,
-                    channels=CHANNELS, 
-                    rate=RATE, 
+                    channels=CHANNELS,
+                    rate=RATE,
                     input=True,
                     output=True,
                     frames_per_buffer=CHUNK)
 
     frames = []
     chunk_index = 1
-    stop_event = threading.Event()
     start_time = time.time()
-    def recording():
-        nonlocal frames
-        nonlocal chunk_index
-        nonlocal start_time
-        while not stop_event.is_set():
-            data = stream.read(CHUNK)
-            frames.append(data)
+    while not stop_event.is_set():
+        data = stream.read(CHUNK, exception_on_overflow=False)
+        frames.append(data)
 
-            # Create a chunk every x seconds
-            elapsed_time = time.time() - start_time
-            if elapsed_time >= 60:
-                chunk_path = f"audio-chunks/chunk{chunk_index}.wav"
-                wf = wave.open(chunk_path, "wb")
-                wf.setnchannels(CHANNELS)
-                wf.setsampwidth(p.get_sample_size(FORMAT))
-                wf.setframerate(RATE)
-                wf.writeframes(b"".join(frames))
-                wf.close()
+        # Create a chunk every x seconds
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= 15:
+            audio_path = f"audio-chunks/chunk{chunk_index}.wav"
+            wf = wave.open(audio_path, "wb")
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b"".join(frames))
+            wf.close()
 
-                frames = []
-                chunk_index += 1
-                start_time = time.time()
+            audio_queue.put(audio_path)
 
-    record_thread = threading.Thread(target=recording)
-    record_thread.start()
+            frames = []
+            chunk_index += 1
+            start_time = time.time()
 
-    # Input to stop recording
-    input("Press 'Enter' to stop the recording")
-    stop_event.set()
-    record_thread.join()
-
+    # Save the remaining frames to a chunk
     if frames:
-        # Save the remaining frames to a chunk
-        chunk_path = f"audio-chunks/chunk{chunk_index}.wav"
-        wf = wave.open(chunk_path, "wb")
+        audio_path = f"audio-chunks/chunk{chunk_index}.wav"
+        wf = wave.open(audio_path, "wb")
         wf.setnchannels(CHANNELS)
         wf.setsampwidth(p.get_sample_size(FORMAT))
         wf.setframerate(RATE)
         wf.writeframes(b"".join(frames))
         wf.close()
+
+        audio_queue.put(audio_path)
 
     # Stop recording
     stream.stop_stream()
