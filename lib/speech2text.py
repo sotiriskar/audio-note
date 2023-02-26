@@ -1,15 +1,16 @@
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, logging
 from deepmultilingualpunctuation import PunctuationModel
 
-# from textblob import TextBlob
+from textblob import TextBlob
 from threading import Thread
 import soundfile as sf
 
 import textwrap
 import datetime
 import warnings
-
 import librosa
+
+import queue
 import torch
 import nltk
 import os
@@ -60,37 +61,40 @@ def chunk_to_text(chunk, transcription):
     chunk_transcription = asr_transcript(chunk_path)
     transcription.append(chunk_transcription) 
 
-def convert_text(audio_path):
+def convert_text(audio_queue, stop_event, trans_date, trans_path):
     if not os.path.isdir("transcripts"):
         os.mkdir("transcripts")
 
-    trans_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
-
-    chunks = os.listdir("audio-chunks")
-    chunks.sort()
-
     transcription = []
-    count = 0
-    for i, chunk in enumerate(chunks):
-        count += 1
-        print(f"Processing chunk {i+1} of {len(chunks)}")
-        p = Thread(target=chunk_to_text, args=(chunk, transcription), group=None)
-        p.start()
-        if count == 2:
-            count = 0
-            p.join()
-    p.join()
+    last_chunk = None
 
-    # make a single string
-    transcription = " ".join(transcription)
+    while not stop_event.is_set():
+        try:
+            audio_path = audio_queue.get(timeout=1)
+            if not audio_path or not os.path.exists(audio_path):
+                continue  # skip if no new audio path available
 
-    # # correct spelling
-    # transcription = TextBlob(transcription)
-    # transcription = str(transcription.correct())
+            if audio_path == last_chunk:
+                continue  # skip if already processed
+            last_chunk = audio_path
 
-    trans_path = f"transcripts/transcript_{trans_date}.txt"
-    with open(trans_path, "w") as f:
-        f.write(transcription)
-    f.close()
+            chunks = os.listdir("audio-chunks")
+            chunks.sort()
+            for i, chunk in enumerate(chunks):
+                if chunk <= last_chunk:
+                    continue  # skip if already processed
+                chunk_to_text(chunk, transcription)
+                os.remove(f"audio-chunks/{chunk}")
+
+            transcription_str = " ".join(transcription)
+            
+            # correct spelling
+            transcription_corr = TextBlob(transcription_str)
+            transcription_final = str(transcription_corr.correct())
+            
+            with open(trans_path, "w") as f:
+                f.write("\n" + transcription_final)
+        except queue.Empty:
+            pass
 
     return trans_path, trans_date
